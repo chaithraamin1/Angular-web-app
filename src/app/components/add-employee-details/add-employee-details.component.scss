@@ -1,0 +1,105 @@
+
+// // <-----------input container------------->
+.input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    max-width: 518px;
+  }
+
+.input-container input {
+    width: 100%;
+    padding: 10px 10px 10px 40px; 
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .input-container .icon {
+    position: absolute;
+    left: 10px;
+    font-size: 18px;
+  }
+
+  // <-----------select container------------->
+ 
+  .select-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    max-width: 518px;
+    margin: 20px 0;
+  }
+
+  .select-container select {
+    width: 100%;
+    padding: 10px 10px 10px 40px; 
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .select-container .icon {
+    position: absolute;
+    left: 10px;
+    font-size: 18px;
+    color: #1DA1F2;
+  }
+
+  // mat Input container
+  .mat-input-container{
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 300px;
+    margin: 20px 0;
+  }
+  .mat-input-container input{
+    width: 100%;
+    padding: 10px 10px 10px 40px; 
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+ // custom angular material input
+
+::ng-deep .mdc-text-field--filled:not(.mdc-text-field--disabled){
+  background-color: white !important;
+}
+::ng-deep .mdc-text-field--filled:not(.mdc-text-field--disabled):hover{
+  background-color: none !important;
+} 
+::ng-deeep .mdc-line-ripple::before {
+  border-bottom-color: rgb(255 255 255 / 42%) !important;
+}
+
+// calendar
+
+::ng-deep .mat-datepicker-content .mat-datepicker-content-container-with-custom-header .mat-calendar {
+    height: unset !important;
+}
+::ng-deep .mat-datepicker-content-touch .mat-calendar {
+  height: unset !important; 
+}
+::ng-deep .mat-mdc-form-field-has-icon-prefix .mat-mdc-text-field-wrapper {
+  border: 1px solid #ccc !important;
+  border-radius: 4px;
+}
+::ng-deep .mat-mdc-form-field {
+  height: 68px;
+}
+::ng-deep .mat-primary {
+  --mat-full-pseudo-checkbox-selected-icon-color: #fff !important;
+}
+
+::ng-deep .mdc-text-field--filled:not(.mdc-text-field--disabled) .mdc-line-ripple::before {
+  border-bottom-color: white !important;
+}
+::ng-deep .mdc-text-field--filled:not(.mdc-text-field--disabled) .mdc-line-ripple::after {
+   border-bottom-color: white !important; 
+}
+

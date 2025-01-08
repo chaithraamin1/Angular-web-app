@@ -1,0 +1,39 @@
+<div class="container-fluid">
+  <h1 class="title">Employee List</h1>
+
+   <!-- Text Not Found -->
+  <div class="divContainerTextNotFound" *ngIf="empListLength == 0">
+    <img
+      src="assets/no_record_found.jpg"
+      alt="img-norecord-found"
+      width="300px"
+    />
+    <p class="text-center text-record-not-found">No Record Found</p>
+  </div>
+ <!-- // end of text year -->
+
+<div *ngIf="empListLength != 0">
+ <h2 class="bg-light text-primary m-0 p-3">Current Employees</h2>
+
+  <div class="list-group" *ngFor="let employee of getAllEmpList">
+    <a class="list-group-item list-group-item-action">
+      <div class="d-flex w-100 justify-content-between">
+        <h3 class="mb-1 text-capitalize">{{ employee.name }}</h3>
+        <div class="icons">
+          <small (click)="deleteEmployee(employee.id)"
+            ><i class="fa fa-trash-o"></i
+          ></small>
+          <small (click)="editEmpData(employee)"
+            ><i class="bi bi-pencil-fill"></i
+          ></small>
+        </div>
+      </div>
+      <h4 class="mb-1 text-capitalize text-muted">{{ employee.role }}</h4>
+      <h5 class="text-muted"> From {{ employee.start_date | date : "dd MMM , YYYY" }}</h5>
+    </a>
+  </div>
+</div>
+  <div class="plus-perator" (click)="addEmployeeDetails()">
+    <i class="fa fa-plus"></i>
+  </div>
+</div>

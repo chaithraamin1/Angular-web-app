@@ -1,0 +1,33 @@
+.list-group-item {
+  border: none;
+  border-bottom: 1px solid lightgray;
+  border-radius: 0;
+}
+.plus-perator {
+  position: fixed;
+  bottom: 20%;
+  right: 7%;
+  background-color: #1da1f2;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 1;
+}
+.divContainerTextNotFound {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: -1;
+}
+.text-record-not-found {
+  font-size: 18px;
+}
+.icons small {
+  font-size: 20px;
+  padding: 0 20px;
+  cursor: pointer;
+}
+
+

@@ -1,0 +1,75 @@
+<div class="container-fluid">
+  <div class="title d-flex align-items-center justify-content-between">
+    <h1>{{ isEditMode ? "Edit Employee Details" : "Add Employee Details" }}</h1> 
+    <span *ngIf="isEditMode" (click)="deleteEmpRecord()"><i class="fa fa-trash-o"></i></span>
+  </div>
+  <form class="mt-3" (ngSubmit)="saveEmployee()">
+    <div class="input-container">
+      <i class="fa fa-user icon text-primary"></i>
+      <input
+        type="text"
+        placeholder="Employee name"
+        [(ngModel)]="employee.name"
+        name="name"
+      />
+    </div>
+    <div class="select-container">
+      <i class="fa fa-suitcase icon text-primary"></i>
+       <select [(ngModel)]="employee.role" name="role" (change)="selectedEmployeeName($event)">
+        <option value="undefined" selected disabled>Select Role</option>
+        <option *ngFor="let role of roles" [value]="role.name">
+          {{ role.name }}
+        </option>
+      </select>
+    </div>
+    <!-- Date Range Fields -->
+    <div class="date-range d-flex">
+      <mat-form-field appearance="fill" class="form-field">
+        <mat-label>Today</mat-label>
+        <input
+          matInput
+          [matDatepicker]="startDatePicker"
+          [(ngModel)]="employee.start_date"
+          name="startdate"
+          (dateChange)="onStartDateChange($event)"
+        />
+        <mat-datepicker-toggle
+          matPrefix
+          [for]="startDatePicker"
+          class="text-primary"
+        ></mat-datepicker-toggle>
+        <mat-datepicker touchUi #startDatePicker [calendarHeaderComponent]="customHeader"></mat-datepicker>
+      </mat-form-field>
+
+      <mat-icon class="arrow-icon text-primary">arrow_forward</mat-icon>
+
+      <mat-form-field appearance="fill" class="form-field">
+        <mat-label>No Date</mat-label>
+        <input
+          matInput
+          [matDatepicker]="endDatePicker"
+          [(ngModel)]="employee.end_date"
+          name="enddate"
+          (dateChange)="onEndDateChange($event)"
+        />
+        <mat-datepicker-toggle
+          matPrefix
+          [for]="endDatePicker"
+          class="text-primary"
+        ></mat-datepicker-toggle>
+        <mat-datepicker touchUi #endDatePicker></mat-datepicker>
+      </mat-form-field>
+    </div>
+
+    <!-- //  end of calendar -->
+    <div>
+      <button type="submit" class="btn btn-primary" style="margin-right: 20px;">
+        {{ isEditMode ? "Update" : "Add" }}
+      </button>
+      <button type="button" class="btn text-primary" (click)="cancel()">
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>
+
