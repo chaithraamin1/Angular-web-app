@@ -1,19 +1,34 @@
-import { FormControl, FormsModule } from '@angular/forms';
+import { FormControl, FormsModule, NgModel } from '@angular/forms';
 import { IndexedDbService } from '../../services/indexed-db.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
-import {MatBottomSheetModule} from '@angular/material/bottom-sheet';
-
+import {
+  CommonModule,
+  formatDate,
+  NgClass,
+  NgFor,
+  NgStyle,
+} from '@angular/common';
+import {
+  MAT_BOTTOM_SHEET_DATA,
+  MatBottomSheetModule,
+} from '@angular/material/bottom-sheet';
+import { MatSelectModule } from '@angular/material/select';
 import {
   ChangeDetectionStrategy,
   Component,
+  CUSTOM_ELEMENTS_SCHEMA,
+  EventEmitter,
   inject,
+  Input,
   NO_ERRORS_SCHEMA,
+  OnInit,
+  Output,
   signal,
   viewChild,
 } from '@angular/core';
 import {
   MatCalendarCellClassFunction,
+  MatDatepickerIntl,
   MatDatepickerModule,
 } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
@@ -35,7 +50,7 @@ import { ChangeDetectorRef, Inject, OnDestroy } from '@angular/core';
 import { MatCalendar, MatDatepicker } from '@angular/material/datepicker';
 import { MatDateFormats } from '@angular/material/core';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { elementAt, map, startWith, takeUntil } from 'rxjs/operators';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {
@@ -43,7 +58,7 @@ import {
   MatBottomSheetRef,
 } from '@angular/material/bottom-sheet';
 import { EmployeeListComponent } from '../employee-list/employee-list.component';
-
+import { DataService } from '../../services/data.service';
 
 const moment = _rollupMoment || _moment;
 
@@ -66,16 +81,20 @@ export const MY_FORMATS = {
     FormsModule,
     CommonModule,
     MatDatepickerModule,
+    MatSelectModule,
     MatInputModule,
     MatFormFieldModule,
     MatButtonModule,
     MatNativeDateModule,
     MatIconModule,
-    MatBottomSheetModule
+    MatBottomSheetModule,
+    MatInputModule,
   ],
   providers: [
-     EmployeeListComponent,
-      provideNativeDateAdapter(),
+    EmployeeListComponent,
+    AddEmployeeDetailsComponent,
+    MatCalendar,
+    provideNativeDateAdapter(),
     {
       provide: DateAdapter,
       useClass: MomentDateAdapter,
@@ -84,17 +103,24 @@ export const MY_FORMATS = {
 
     { provide: MAT_DATE_FORMATS, useValue: MY_FORMATS },
   ],
-  schemas: [NO_ERRORS_SCHEMA],
+  schemas: [NO_ERRORS_SCHEMA, CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './add-employee-details.component.html',
   styleUrl: './add-employee-details.component.scss',
 })
-export class AddEmployeeDetailsComponent {
-  readonly customHeader = customHeader;
+export class AddEmployeeDetailsComponent implements OnInit {
+  customHeader = customHeader;
+  customHeader2 = customHeader2;
+  // selected_end_date: Date | null = null;
+  selected_end_date: any;
+  selected_start_date: any;
   private _bottomSheet = inject(MatBottomSheet);
   private _snackBar = inject(MatSnackBar);
   durationInSeconds = 5;
- 
+  startDateChangedFlag: boolean = false;
+  endDateChangedFlag: boolean = false;
+  selected: any;
+  roll: any;
   date = new FormControl(moment());
   roleId!: number;
   employee: any = [
@@ -105,99 +131,81 @@ export class AddEmployeeDetailsComponent {
       end_date: '',
     },
   ];
-  roles: any = [
-    { id: 1, name: 'Product Designer' },
-    { id: 2, name: 'Flutter Developer' },
-    { id: 3, name: 'QA Tester' },
-    { id: 4, name: 'Product Owner' },
-  ];
+  roles: any = {
+    id: '',
+    name: '',
+  };
   isEditMode: boolean = false;
+  selectedValue: any;
+  role_name: any;
+  selected_role_name: any;
+  selected_date: Date | null = null;
+  selectedStartDateFromCalendarObj: any = { date: '' };
+  @Input() selectedDate: any;
+  selectedEndDateObj: any = { enddate: '' };
+
   constructor(
     private route: ActivatedRoute,
     private employeeService: IndexedDbService,
     private router: Router,
-    private empListComponent:EmployeeListComponent
+    private empListComponent: EmployeeListComponent,
+    private bottomSheet: MatBottomSheet,
+    private cdr: ChangeDetectorRef,
+    private dateService: DataService,
+    private calendar: MatCalendar<Date>
   ) {
-    // window.onload = () => {
-    //   const today: any = new Date();
-    //   const calendarDays: any = document.getElementById('calendar-days');
-    //   var currentMonth: any = document.getElementById('current-month');
-    //   var currentDate: any = new Date();
-    //   var today1 = document.getElementById('today') as any;
-    //   if (today1) {
-    //     today1.addEventListener('click', () => {
-    //       currentDate = new Date();
-    //       this.renderCalendar(currentDate);
-    //     });
-    //   }
-    //   var nextMonday = document.getElementById('next-monday') as any;
-    //   if (nextMonday) {
-    //     nextMonday.addEventListener('click', () => {
-    //       const nextMonday = new Date();
-    //       nextMonday.setDate(
-    //         today.getDate() + ((1 + 7 - today.getDay()) % 7 || 7)
-    //       );
-    //       currentDate = nextMonday;
-    //       this.renderCalendar(currentDate);
-    //     });
-    //   }
-    //   var nextTuesday = document.getElementById('next-tuesday') as any;
-    //   if (nextTuesday) {
-    //     nextTuesday.addEventListener('click', () => {
-    //       const nextTuesday = new Date();
-    //       nextTuesday.setDate(
-    //         today.getDate() + ((2 + 7 - today.getDay()) % 7 || 7)
-    //       );
-    //       currentDate = nextTuesday;
-    //       this.renderCalendar(currentDate);
-    //     });
-    //   }
-    //   var afterOneWeek = document.getElementById('after-one-week') as any;
-    //   if (afterOneWeek) {
-    //     afterOneWeek.addEventListener('click', () => {
-    //       const nextWeek = new Date(today);
-    //       nextWeek.setDate(today.getDate() + 7);
-    //       currentDate = nextWeek;
-    //       this.renderCalendar(currentDate);
-    //     });
-    //   }
-    //   // Navigation
-    //   var prevMonth = document.getElementById('prev-month') as any;
-    //   if (prevMonth) {
-    //     prevMonth.addEventListener('click', () => {
-    //       currentDate.setMonth(currentDate.getMonth() - 1);
-    //       this.renderCalendar(currentDate);
-    //     });
-    //   }
-    //   var nextMonth = document.getElementById('next-month') as any;
-    //   if (nextMonth) {
-    //     nextMonth.addEventListener('click', () => {
-    //       currentDate.setMonth(currentDate.getMonth() + 1);
-    //       this.renderCalendar(currentDate);
-    //     });
-    //   }
-    //   this.renderCalendar(currentDate);
-    // };
+    this.roles = this.getAllRoles();
   }
+
   ngOnInit(): void {
+    this.dateService.selectedDate$.subscribe((selected_start_calendar_date: any) => {
+      if (selected_start_calendar_date) {
+        this.selectedStartDateFromCalendarObj = { date: selected_start_calendar_date };
+        this.employee.start_date = this.selectedStartDateFromCalendarObj.date;
+        this.selected_start_date = moment(selected_start_calendar_date).format(
+          'D MMM YYYY'
+        );
+      }
+    });
+    this.dateService.selectedDate2$.subscribe((selectedEndDate: any) => {
+      if (selectedEndDate) {
+        this.selectedEndDateObj = { enddate: selectedEndDate };
+        this.employee.end_date = this.selectedEndDateObj.enddate;
+        if (this.selectedEndDateObj.enddate != 'No Date Selected')
+          this.selected_end_date = moment(this.selectedEndDateObj.enddate).format(
+            'D MMM YYYY'
+          );
+        else this.selected_end_date = 'No Date Selected';
+      }
+    });
     this.route.queryParams.subscribe(async (params: any) => {
       if (params['data']) {
         this.isEditMode = true;
         const convert_params_to_object = new URLSearchParams(params.data);
         this.employee = Object.fromEntries(convert_params_to_object.entries());
-        console.log(this.employee);
-        for (let i = 0; i < this.roles.length; i++) {
-          if (this.roles[i].id == this.employee.role_id) {
-            this.employee.role = this.roles[i].name;
-            this.roleId = this.roles[i].id;
+
+        if (this.roles) {
+          for (let i = 0; i < this.roles.length; i++) {
+            if (this.roles[i].id == this.employee.role_id) {
+              this.employee.role = this.roles[i].name;
+              this.roleId = this.roles[i].id;
+            }
           }
         }
       }
     });
   }
 
-  saveEmployee(): void {
-    debugger
+  getAllRoles() {
+    this.employeeService.getRoles();
+  }
+  addRoles() {
+    this.employeeService.addRoles().then((role) => {
+      console.log('role', role);
+    });
+  }
+  saveEmployee() {
+    debugger;
     if (this.isEditMode) {
       const employeeObject = {
         name: this.employee.name,
@@ -206,11 +214,14 @@ export class AddEmployeeDetailsComponent {
         start_date: this.employee.start_date,
         end_date: this.employee.end_date,
       };
-      this.employeeService.editEmpData( parseInt(this.employee.id,10),employeeObject).then(() => {
-        this._snackBar.openFromComponent(EditsnackBarComponent, {
-          duration: this.durationInSeconds * 1000,
+
+      this.employeeService
+        .editEmpData(parseInt(this.employee.id, 10), employeeObject)
+        .then(() => {
+          this._snackBar.openFromComponent(EditsnackBarComponent, {
+            duration: this.durationInSeconds * 1000,
+          });
         });
-      });
 
       this.router.navigate(['/']);
     } else {
@@ -219,16 +230,13 @@ export class AddEmployeeDetailsComponent {
         role: this.employee.role,
         role_id: this.roleId,
         start_date: this.employee.start_date,
-        end_date: this.employee.end_date
+        end_date: this.employee.end_date,
       };
-      this.employeeService
-        .addEmployee(employeeObject)
-        .then(()=>{
-          this._snackBar.openFromComponent(AddSnackBarComponent, {
-            duration: this.durationInSeconds * 1000,
-          });
-        })
-  
+      this.employeeService.addEmployee(employeeObject).then(() => {
+        this._snackBar.openFromComponent(AddSnackBarComponent, {
+          duration: this.durationInSeconds * 1000,
+        });
+      });
 
       this.router.navigate(['/']);
     }
@@ -237,130 +245,171 @@ export class AddEmployeeDetailsComponent {
   cancel(): void {
     this.router.navigate(['/']);
   }
-  selectedEmployeeName(event: any) {
-    for (let i = 0; i < this.roles.length; i++) {
-      if (this.roles[i].name == event.target.value) {
-        this.roleId = this.roles[i].id;
-      }
+  onDatePickerOpen(){
+    debugger
+   
+  }
+  onSaveStartDate() {
+    debugger
+  
+   if (this.selectedStartDateFromCalendarObj) {
+      this.employee.start_date =
+        this.selectedStartDateFromCalendarObj.date.toISOString();
+    } else {
+      this.onStartDateChange('');
     }
   }
-  onStartDateChange(event:any){
-    this.employee.start_date = event.target.value.toISOString();
+  onSaveEndDate() {
+    if (this.selectedEndDateObj.enddate) {
+      this.employee.end_date = this.selectedEndDateObj.enddate.toISOString();
+    } else {
+      this.onEndDateChange('');
+    }
   }
-  onEndDateChange(event:any){
-   this.employee.end_date = event.target.value.toISOString();
+
+  onStartDateChange(event: any) {
+    debugger
+    this.employee.start_date = event.target.value.toISOString();
+    this.selected_start_date=  moment(event.target.value).format(
+      'D MMM YYYY'
+    );
+  }
+  onEndDateChange(event: any) {
+    this.employee.end_date = event.target.value.toISOString();
   }
   openBottomSheet(): void {
-    this._bottomSheet.open(BottomSheetComponent);
+    debugger;
+    const bottomSheetRef = this.bottomSheet.open(BottomSheetComponent);
+    bottomSheetRef.afterDismissed().subscribe((result: any) => {
+      if (result) {
+        this.employee.role = result.role_name;
+        this.roleId = result.role_id;
+        this.cdr.detectChanges(); // Manually trigger change detection
+      }
+    });
   }
-  deleteEmpRecord(){
-    this.empListComponent.deleteEmployee(parseInt(this.employee.id,10))
-    this.router.navigate(['/list'])
+  deleteEmpRecord() {
+    this.empListComponent.deleteEmployee(parseInt(this.employee.id, 10));
+    this.router.navigate(['/list']);
   }
 }
 /** Custom header component for datepicker. */
 @Component({
   selector: 'customHeader',
+  standalone: true,
+  providers: [CommonModule],
+
   styles: [
     `
-      .quick-actions {
-        margin-top: 4px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        justify-content: center;
-        padding: 0px 5px;
-
-        button {
-          flex: 1 1 calc(50% - 8px);
-          margin-bottom: 8px;
-        }
-      }
-      .example-header {
-        display: flex;
-        align-items: center;
+      .custom-header {
         padding: 0.5em;
+        text-align: center;
+        margin-bottom: 10px;
       }
 
-      .example-header-label {
+      .custom-header-label {
         flex: 1;
         height: 1em;
         font-weight: 500;
         text-align: center;
       }
+      .custom-header span {
+        font-size: 15px;
+      }
+      .custom-header img {
+        width: 31px;
+      }
+      .btn-grp {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* 2 buttons per row */
+        gap: 10px; /* Space between buttons */
+      }
+      /* Buttons */
+      button {
+        width: 100%;
+        font-size: 16px;
+        padding: 10px;
+      }
 
-      .example-double-arrow .mat-icon {
-        margin: -22%;
+      /* Responsive for smaller screens (max-width: 600px) */
+      @media (max-width: 600px) {
+        .button-container {
+          grid-template-columns: 1fr; /* 1 button per row for small screens */
+        }
+
+        button {
+          font-size: 14px; /* Adjust font size */
+          padding: 8px; /* Adjust padding */
+        }
+      }
+
+      // keep button in active state
+      button.active {
+        background-color: #0d6efd;
+        color: white !important;
       }
     `,
   ],
   template: `
-    <div class="quick-actions">
+    <div class="btn-grp">
       <button
         type="button"
-        class="btn text-primary bg-light"
-        (click)="setToday()"
+        class="btn btn-light text-primary "
+        *ngFor="let btn of buttons; let i = index"
+        [ngClass]="{ active: activeButtonIndex === i }"
+        (click)="setActiveButton(i)"
       >
-        Today
-      </button>
-      <button
-        type="button"
-        class="btn text-primary bg-light"
-        (click)="setNextMonday()"
-      >
-        Next Monday
-      </button>
-      <button
-        type="button"
-        class="btn text-primary bg-light"
-        (click)="setNextTuesday()"
-      >
-        Next Tuesday
-      </button>
-      <button
-        type="button"
-        class="btn text-primary bg-light"
-        (click)="setAfterOneWeek()"
-      >
-        After 1 Week
+        {{ btn }}
       </button>
     </div>
-
-    <div class="example-header">
-      <i class="material-icons" (click)="previousClicked('year')"
-        >keyboard_arrow_left</i
-      >
-      <i class="material-icons" (click)="previousClicked('month')"
-        >keyboard_arrow_left</i
-      >
-      <span class="example-header-label">{{ periodLabel() }}</span>
-      <i class="material-icons" (click)="nextClicked('month')"
-        >keyboard_double_arrow_left</i
-      >
-      <i class="material-icons" (click)="nextClicked('year')"
-        >keyboard_double_arrow_right</i
-      >
+    <div class="custom-header">
+      <img
+        src="assets/arrow_left_26dp_5F6368_FILL0_wght400_GRAD0_opsz24.svg"
+        alt=""
+        class="arrow-left"
+        (click)="previousClicked('month')"
+      />
+      <span class="custom-header-label" (click)="periodClicked()">{{
+        periodLabel()
+      }}</span>
+      <img
+        src="assets/arrow_right_26dp_5F6368_FILL0_wght400_GRAD0_opsz24.svg"
+        alt=""
+        (click)="nextClicked('month')"
+      />
     </div>
   `,
+  imports: [MatButtonModule, MatIconModule, NgClass, NgFor, MatDatepicker],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class customHeader<D = null> implements OnDestroy {
-  readonly picker = viewChild.required<MatDatepicker<Date>>('today');
+export class customHeader<D> implements OnDestroy {
+  buttons: string[] = ['Today', 'Next Monday', 'Next Tuesday', 'After 1 Week'];
+  activeButtonIndex: number | null = null;
   selectedDate: Date | null = null;
   private _calendar = inject<MatCalendar<D>>(MatCalendar);
   private _dateAdapter = inject<DateAdapter<D>>(DateAdapter);
   private _dateFormats = inject(MAT_DATE_FORMATS);
   private _destroyed = new Subject<void>();
   readonly periodLabel = signal('');
-  _datePicker: any;
- 
-  constructor(){}
+  @Output() dateSelected = new EventEmitter<string>();
 
- public todayClicked() {
-    this._calendar.activeDate = this._dateAdapter.today();
-    //  this._calendar._dateSelected(this._calendar.activeDate);
-    this._datePicker.select(this._dateAdapter.today());
-    this._datePicker.close();
+  constructor(
+    private calendar: MatCalendar<Date>,
+    public intl: MatDatepickerIntl,
+    private dateService: DataService
+  ) {
+    this._calendar.stateChanges
+      .pipe(startWith(null), takeUntil(this._destroyed))
+      .subscribe(() => {
+        this.periodLabel.set(
+          this._dateAdapter
+            .format(
+              this._calendar.activeDate,
+              this._dateFormats.display.monthYearLabel
+            )
+            .toLocaleUpperCase()
+        );
+      });
   }
 
   ngOnDestroy() {
@@ -368,15 +417,13 @@ export class customHeader<D = null> implements OnDestroy {
     this._destroyed.complete();
   }
 
-  // periodLabel() {
-  //   return this._dateAdapter
-  //     .format(
-  //       this._calendar.activeDate,
-  //       this._dateFormats.display.monthYearLabel
-  //     )
-  //     .toLocaleUpperCase();
-  // }
-
+  setActiveButton(index: number): void {
+    this.activeButtonIndex = index;
+    if (index == 0) this.selectToday();
+    if (index == 1) this.selectNextMonday();
+    if (index == 2) this.selectNextTuesday();
+    if (index == 3) this.selectOneWeekLater();
+  }
   previousClicked(mode: 'month' | 'year') {
     this._calendar.activeDate =
       mode === 'month'
@@ -390,34 +437,218 @@ export class customHeader<D = null> implements OnDestroy {
         ? this._dateAdapter.addCalendarMonths(this._calendar.activeDate, 1)
         : this._dateAdapter.addCalendarYears(this._calendar.activeDate, 1);
   }
-  setToday() {
-    this._calendar.activeDate = this._dateAdapter.today();
-    // this._calendar._dateSelected(this._calendar.activeDate);
-    this._datePicker.select(this._dateAdapter.today());
-    this._datePicker.close();
+  periodClicked(): void {
+    this.calendar.currentView = 'multi-year'; // Show year view
+  }
 
+  // Function to set today's date and close the datepicker
+  selectToday(): void {
+    debugger;
+    const today: any = this._dateAdapter.today();
+    this._calendar.activeDate = today; // Highlight today's date in the calendar
+    this._calendar.selected = today; // Set today's date as selected
+    this.dateService.setSelectedDate(this._calendar.selected);
   }
-  setNextMonday() {
+  // Function to select next Monday
+  selectNextMonday(): void {
     const today = new Date();
-    var nextMonday = new Date(
-      today.setDate(today.getDate() + ((8 - today.getDay()) % 7 || 7))
-    );
+    const dayOfWeek = today.getDay(); // Get the current day of the week (0 = Sunday, 1 = Monday, etc.)
+    const daysToNextMonday = (8 - dayOfWeek) % 7; // Calculate how many days to the next Monday (0 if today is Monday)
 
-    this._datePicker.close();
+    // Set the next Monday
+    const nextMonday = new Date(today);
+    nextMonday.setDate(today.getDate() + daysToNextMonday);
+    this.calendar.activeDate = nextMonday;
+    this.calendar.selected = nextMonday;
+    this.dateService.setSelectedDate(this.calendar.selected);
   }
-  setNextTuesday() {
+  selectNextTuesday() {
     const today = new Date();
-    const nextTuesday = new Date(
-      today.setDate(today.getDate() + ((9 - today.getDay()) % 7 || 7))
-    );
-    // this.selectedDate = nextTuesday;
+    const dayOfWeek = today.getDay(); // Get the current day of the week (0 = Sunday, 1 = Monday, 2 = Tuesday, etc.)
+    const daysToNextTuesday = (9 - dayOfWeek) % 7; // Calculate how many days to the next Tuesday (0 if today is Tuesday)
+
+    // Set the next Tuesday
+    const nextTuesday = new Date(today);
+    nextTuesday.setDate(today.getDate() + daysToNextTuesday);
+    this.calendar.activeDate = nextTuesday;
+    this.calendar.selected = nextTuesday; // Set the selected date to next Tuesday
+    this.dateService.setSelectedDate(this.calendar.selected);
   }
-  setAfterOneWeek() {
+  // Function to select one week later (7 days after today)
+  selectOneWeekLater(): void {
     const today = new Date();
-    const afterOneWeek = new Date(today.setDate(today.getDate() + 7));
-    // this.selectedDate = afterOneWeek;
+    const oneWeekLater = new Date(today);
+    oneWeekLater.setDate(today.getDate() + 7); // Add 7 days to today's date
+
+    // Set the selected and active date to one week later
+    this.calendar.activeDate = oneWeekLater;
+    this.calendar.selected = oneWeekLater;
+    this.dateService.setSelectedDate(this.calendar.selected);
   }
 }
+
+// Header 2
+@Component({
+  selector: 'customHeader2',
+  standalone: true,
+  providers: [CommonModule],
+
+  styles: [
+    `
+      .custom-header {
+        padding: 0.5em;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      .custom-header-label {
+        flex: 1;
+        height: 1em;
+        font-weight: 500;
+        text-align: center;
+      }
+      .custom-header span {
+        font-size: 15px;
+      }
+      .custom-header img {
+        width: 31px;
+      }
+      .btn-grp {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* 2 buttons per row */
+        gap: 10px; /* Space between buttons */
+      }
+      /* Buttons */
+      button {
+        width: 100%;
+        font-size: 16px;
+        padding: 10px;
+      }
+
+      /* Responsive for smaller screens (max-width: 600px) */
+      @media (max-width: 600px) {
+        .button-container {
+          grid-template-columns: 1fr; /* 1 button per row for small screens */
+        }
+
+        button {
+          font-size: 14px; /* Adjust font size */
+          padding: 8px; /* Adjust padding */
+        }
+      }
+
+      // keep button in active state
+      button.active {
+        background-color: #0d6efd;
+        color: white !important;
+      }
+    `,
+  ],
+  template: `
+    <div class="btn-grp">
+      <button
+        type="button"
+        class="btn btn-light text-primary "
+        *ngFor="let btn of buttons; let i = index"
+        [ngClass]="{ active: activeButtonIndex === i }"
+        (click)="setActiveButton(i)"
+      >
+        {{ btn }}
+      </button>
+    </div>
+    <div class="custom-header">
+      <img
+        src="assets/arrow_left_26dp_5F6368_FILL0_wght400_GRAD0_opsz24.svg"
+        alt=""
+        class="arrow-left"
+        (click)="previousClicked('month')"
+      />
+      <span class="custom-header-label" (click)="periodClicked()">{{
+        periodLabel()
+      }}</span>
+      <img
+        src="assets/arrow_right_26dp_5F6368_FILL0_wght400_GRAD0_opsz24.svg"
+        alt=""
+        (click)="nextClicked('month')"
+      />
+    </div>
+  `,
+  imports: [MatButtonModule, MatIconModule, NgClass, NgFor],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class customHeader2<D> implements OnDestroy {
+  buttons: string[] = ['No Date', 'Today'];
+  activeButtonIndex: number | null = null;
+  private _calendar2 = inject<MatCalendar<D>>(MatCalendar);
+  private _dateAdapter2 = inject<DateAdapter<D>>(DateAdapter);
+  private _dateFormats = inject(MAT_DATE_FORMATS);
+  private _destroyed = new Subject<void>();
+  readonly periodLabel = signal('');
+  // @Inject(MAT_DATE_FORMATS) private dateFormats: MatDateFormats
+
+  constructor(
+    private calendar: MatCalendar<Date>,
+    public intl: MatDatepickerIntl,
+    private dateService: DataService
+  ) {
+    this._calendar2.stateChanges
+      .pipe(startWith(null), takeUntil(this._destroyed))
+      .subscribe(() => {
+        this.periodLabel.set(
+          this._dateAdapter2
+            .format(
+              this._calendar2.activeDate,
+              this._dateFormats.display.monthYearLabel
+            )
+            .toLocaleUpperCase()
+        );
+      });
+  }
+
+  ngOnDestroy() {
+    this._destroyed.next();
+    this._destroyed.complete();
+  }
+
+  setActiveButton(index: number): void {
+    this.activeButtonIndex = index;
+    if (this.activeButtonIndex == 0) {
+      this.nodateSelected();
+    } else {
+      this.selectToday();
+    }
+  }
+  previousClicked(mode: 'month' | 'year') {
+    this._calendar2.activeDate =
+      mode === 'month'
+        ? this._dateAdapter2.addCalendarMonths(this._calendar2.activeDate, -1)
+        : this._dateAdapter2.addCalendarYears(this._calendar2.activeDate, -1);
+  }
+
+  nextClicked(mode: 'month' | 'year') {
+    this._calendar2.activeDate =
+      mode === 'month'
+        ? this._dateAdapter2.addCalendarMonths(this._calendar2.activeDate, 1)
+        : this._dateAdapter2.addCalendarYears(this._calendar2.activeDate, 1);
+  }
+  periodClicked(): void {
+    this.calendar.currentView = 'multi-year'; // Show year view
+  }
+
+  // Function to set today's date and close the datepicker
+  selectToday(): void {
+    debugger;
+    const today = this._dateAdapter2.today();
+    this._calendar2.activeDate = today;
+    this._calendar2.selected = today;
+    this.dateService.setSelectedEndDate(this._calendar2.selected);
+  }
+  nodateSelected() {
+    this._calendar2.selected = null;
+    this.dateService.setSelectedEndDate('No Date Selected');
+  }
+}
+
 @Component({
   selector: 'EditsnackBarComponent',
   template: ` <span>Record updated successfully ! </span> `,
@@ -433,19 +664,46 @@ export class EditsnackBarComponent {}
 export class AddSnackBarComponent {}
 
 // bottom sheet component
+
 @Component({
+  standalone: true,
   selector: 'BottomSheetComponent',
-  providers:[],
-  template:`<span>Hiiii</span>`,
-  
+  styles: `
+    li{
+      padding: 20px;
+      font-weight: 400;
+      font-size: 16px;
+    }
+  `,
+  imports: [NgFor],
+  templateUrl: 'bottom-sheet-overview-example.html',
 })
 export class BottomSheetComponent {
-  private _bottomSheetRef =
-    inject<MatBottomSheetRef<BottomSheetComponent>>(MatBottomSheetRef);
+  roles: any;
+  roleId: any;
+  role_name: any;
+  constructor(
+    private bottomSheetRef: MatBottomSheetRef<BottomSheetComponent>,
+    private employeeService: IndexedDbService
+  ) {
+    this.employeeService.getRoles().then((roles: any) => {
+      this.roles = roles;
+      console.log(this.roles);
+    });
+  }
+  selectedEmployeeName(role_name: any) {
+    debugger;
+    for (let i = 0; i < this.roles.length; i++) {
+      if (this.roles[i].name == role_name) {
+        this.roleId = this.roles[i].id;
 
-  openLink(event: MouseEvent): void {
-    this._bottomSheetRef.dismiss();
-    event.preventDefault();
+        this.role_name = role_name;
+      }
+    }
+    var selectedRoleObjectFromBottomSheet = {
+      role_name: this.role_name,
+      role_id: this.roleId,
+    };
+    this.bottomSheetRef.dismiss(selectedRoleObjectFromBottomSheet);
   }
 }
-

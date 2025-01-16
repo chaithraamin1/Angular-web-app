@@ -1,18 +1,23 @@
 .list-group-item {
   border: none;
   border-bottom: 1px solid lightgray;
-  border-radius: 0;
+}
+.list-group{
+  border-radius: 0px;
 }
 .plus-perator {
   position: fixed;
   bottom: 20%;
-  right: 7%;
+  right: 2%;
   background-color: #1da1f2;
   color: white;
   padding: 12px 20px;
   border-radius: 4px;
-  cursor: pointer;
+  cursor: pointer !important;
   z-index: 1;
+}
+.plus-perator i{
+  cursor: pointer !important;
 }
 .divContainerTextNotFound {
   position: absolute;
@@ -24,10 +29,63 @@
 .text-record-not-found {
   font-size: 18px;
 }
-.icons small {
-  font-size: 20px;
-  padding: 0 20px;
-  cursor: pointer;
+
+
+/* Container for the swipeable item */
+.swipe-container {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.3s ease;
 }
 
+/* Content area (the main item to display) */
+.content {
+  flex: 1;
+  padding: 0 16px;
+  background-color: #fff;
+  z-index: 1;
+}
 
+/* Delete icon container */
+.swipe-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 100%;
+  color: white;
+  font-weight: bold;
+  position: absolute; 
+  top: 0;
+  transform: translateX(200%); /* Hidden initially */
+  transition: transform 0.3s ease;
+}
+.delete-icon{
+  background-color: red;
+  right: 0px;
+}
+.edit-icon{
+  right: 80px;
+  background: green;
+}
+
+/* On hover or focus, reveal delete icon */
+.swipe-container:hover .delete-icon {
+  transform: translateX(60px);
+}
+.swipe-container:hover .edit-icon{
+  transform: translateX(60px);
+} 
+.swipe-container:hover .content {
+  transform: translateX(-50px);
+}
+.icons small {
+  font-size: 20px;
+  position: relative;
+  cursor: pointer;
+}
+.icons small i{
+    font-size: 22px;
+}

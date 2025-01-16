@@ -8,28 +8,33 @@
       alt="img-norecord-found"
       width="300px"
     />
-    <p class="text-center text-record-not-found">No Record Found</p>
+    <p class="text-center text-record-not-found">No Employee Record Found</p>
   </div>
  <!-- // end of text year -->
 
 <div *ngIf="empListLength != 0">
  <h2 class="bg-light text-primary m-0 p-3">Current Employees</h2>
 
-  <div class="list-group" *ngFor="let employee of getAllEmpList">
-    <a class="list-group-item list-group-item-action">
-      <div class="d-flex w-100 justify-content-between">
+  <div class="list-group swipe-container" *ngFor="let employee of getAllEmpList">
+    <a class="list-group-item list-group-item-action  content">
+      <div class="d-flex w-100 justify-content-between ">
         <h3 class="mb-1 text-capitalize">{{ employee.name }}</h3>
         <div class="icons">
-          <small (click)="deleteEmployee(employee.id)"
+          <div class="swipe-icon delete-icon">
+          <small  (click)="deleteEmployee(employee.id)"
             ><i class="fa fa-trash-o"></i
           ></small>
+        </div>
+        <div class="swipe-icon edit-icon">
           <small (click)="editEmpData(employee)"
             ><i class="bi bi-pencil-fill"></i
           ></small>
         </div>
+        </div>
       </div>
       <h4 class="mb-1 text-capitalize text-muted">{{ employee.role }}</h4>
       <h5 class="text-muted"> From {{ employee.start_date | date : "dd MMM , YYYY" }}</h5>
+      
     </a>
   </div>
 </div>
@@ -37,3 +42,5 @@
     <i class="fa fa-plus"></i>
   </div>
 </div>
+
+

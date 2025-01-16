@@ -21,9 +21,40 @@ export class EmployeeListComponent {
     private employeeService: IndexedDbService
   ) {}
   ngOnInit() {
-    this.read();
+    // swipe delete button 
+    const swipeContainers:any = document.querySelectorAll('.swipe-container');
+    
+    swipeContainers.forEach((container:any) => {
+      let startX = 0;
+      let isSwiping = false;
+    
+      container.addEventListener('touchstart', (e:any) => {
+        startX = e.touches[0].clientX;
+        isSwiping = true;
+      });
+    
+      container.addEventListener('touchmove', (e:any) => {
+        if (!isSwiping) return;
+        const diffX = e.touches[0].clientX - startX;
+        if (diffX < 0) {
+          container.style.transform = `translateX(${Math.max(diffX, -80)}px)`; // Limit swipe distance
+        }
+      });
+    
+      container.addEventListener('touchend', () => {
+        isSwiping = false;
+        const currentTransform = parseInt(container.style.transform.replace('translateX(', '')) || 0;
+        if (currentTransform < -40) {
+          container.style.transform = 'translateX(-80px)';
+        } else {
+          container.style.transform = 'translateX(0)';
+        }
+      });
+    });
+    
     this.getAllEmployees();
   }
+
   addEmployeeDetails() {
     this.router.navigate(['/add']);
   }
@@ -32,11 +63,13 @@ export class EmployeeListComponent {
       .getEmployees()
       .then((data: any) => {
         this.getAllEmpList = data;
+        console.log("this.getAllEmpList",this.getAllEmpList); 
         this.empListLength = this.getAllEmpList.length;
       })
       .catch((error: any) => {
         // this.toastr.success('Error while fetching data');
       });
+
   }
   deleteEmployee(empId: any) {
     this.employeeService
@@ -57,11 +90,7 @@ export class EmployeeListComponent {
     const queryString = new URLSearchParams(employee).toString();
     this.router.navigate(['/add'], { queryParams: { data: queryString } });
   }
-  read(){
-     this.employeeService.readAll().then((data:any)=>{
-       console.log('d',data)
-     })
-  }
+
 }
 @Component({
   selector: 'snackBarComponent',

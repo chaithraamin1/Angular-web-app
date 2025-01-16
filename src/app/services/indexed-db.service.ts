@@ -5,17 +5,22 @@ import { Injectable } from '@angular/core';
 })
 export class IndexedDbService {
   private dbName = 'EmployeeDB';
-  // private db: IDBDatabase | null = null;
+  newVersion = 2;
 
-  constructor() {}
   openDatabase() {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, 1);
+      const request = indexedDB.open(this.dbName, this.newVersion);
 
       request.onupgradeneeded = (event: any) => {
         const db = event.target.result;
         if (!db.objectStoreNames.contains('employees')) {
           db.createObjectStore('employees', {
+            keyPath: 'id',
+            autoIncrement: true,
+          });
+        }
+        if (!db.objectStoreNames.contains('roles')) {
+          db.createObjectStore('roles', {
             keyPath: 'id',
             autoIncrement: true,
           });
@@ -29,6 +34,65 @@ export class IndexedDbService {
       request.onerror = (event: any) => {
         reject(`Error opening database: ${event.target.errorCode}`);
       };
+    });
+  }
+  getRoles(){
+    return this.openDatabase().then((db: any) => {
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction('roles', 'readonly');
+        const store = transaction.objectStore('roles');
+        const request = store.getAll();
+        // const request = store.clear();
+        request.onsuccess = (event: any) => resolve(event.target.result);
+        request.onerror = (event: any) =>
+          reject(`Error fetching all roles: ${event.target.errorCode}`);
+      });
+    });
+   }
+
+  addRoles() {
+    return this.openDatabase().then((db: any) => {
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction('roles', 'readwrite');
+        const store = transaction.objectStore('roles');
+        
+        // Data to add to the 'roles' table
+        const rolesData = [
+          { name: 'Product Designer' },
+          { name: 'Flutter Developer' },
+          { name: 'QA Tester' },
+          { name: 'Product Owner' }
+        ];
+
+        rolesData.forEach((role) => {
+          const addRequest = store.add(role);
+
+          addRequest.onsuccess = () => {
+            console.log(`Role added: ${role.name}`);
+          };
+
+          addRequest.onerror = (event: any) => {
+            console.error(
+              `Failed to add role: ${role.name}`,
+              event.target.error
+            );
+          };
+        });
+
+        const request = store.getAll();
+
+        transaction.oncomplete = () => {
+          console.log('All roles added successfully.');
+        };
+
+        transaction.onerror = (event: any) => {
+          console.error('Transaction failed:', event.target.error);
+        };
+
+        request.onerror = (event: any) => {
+          console.error('Error opening database:', event.target.error);
+        };
+      });
     });
   }
 

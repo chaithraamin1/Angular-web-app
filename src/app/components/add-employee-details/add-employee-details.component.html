@@ -1,7 +1,9 @@
 <div class="container-fluid">
   <div class="title d-flex align-items-center justify-content-between">
-    <h1>{{ isEditMode ? "Edit Employee Details" : "Add Employee Details" }}</h1> 
-    <span *ngIf="isEditMode" (click)="deleteEmpRecord()"><i class="fa fa-trash-o"></i></span>
+    <h1>{{ isEditMode ? "Edit Employee Details" : "Add Employee Details" }}</h1>
+    <span *ngIf="isEditMode" (click)="deleteEmpRecord()"
+      ><i class="fa fa-trash-o"></i
+    ></span>
   </div>
   <form class="mt-3" (ngSubmit)="saveEmployee()">
     <div class="input-container">
@@ -15,14 +17,15 @@
     </div>
     <div class="select-container">
       <i class="fa fa-suitcase icon text-primary"></i>
-       <select [(ngModel)]="employee.role" name="role" (change)="selectedEmployeeName($event)">
-        <option value="undefined" selected disabled>Select Role</option>
-        <option *ngFor="let role of roles" [value]="role.name">
-          {{ role.name }}
-        </option>
-      </select>
+      <input
+        type="text"
+        placeholder="Select role"
+        [(ngModel)]="employee.role"
+        name="roleName"
+        (click)="openBottomSheet()"
+      />
     </div>
-    <!-- Date Range Fields -->
+
     <div class="date-range d-flex">
       <mat-form-field appearance="fill" class="form-field">
         <mat-label>Today</mat-label>
@@ -32,13 +35,48 @@
           [(ngModel)]="employee.start_date"
           name="startdate"
           (dateChange)="onStartDateChange($event)"
+          (click)="startDatePicker.open()"
+          (focus)="onDatePickerOpen()"
         />
         <mat-datepicker-toggle
           matPrefix
           [for]="startDatePicker"
           class="text-primary"
         ></mat-datepicker-toggle>
-        <mat-datepicker touchUi #startDatePicker [calendarHeaderComponent]="customHeader"></mat-datepicker>
+        <mat-datepicker
+          touchUi
+          #startDatePicker
+          [calendarHeaderComponent]="customHeader"
+
+         
+        >
+          <mat-datepicker-actions>
+            <span
+              ><i class="fa fa-calendar text-primary" *ngIf="selected_start_date"></i>
+              <small class="text-start-date">{{
+                selected_start_date 
+              }}</small></span
+            >
+            <div class="btn-group-datepicker">
+              <button
+                type="button"
+                class="btn text-primary btn-cancel"
+                mat-button
+                matDatepickerCancel
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary"
+                matDatepickerApply 
+                (click)="onSaveStartDate()"
+              >
+                Save
+              </button>
+            </div>
+          </mat-datepicker-actions>
+        </mat-datepicker>
       </mat-form-field>
 
       <mat-icon class="arrow-icon text-primary">arrow_forward</mat-icon>
@@ -51,25 +89,51 @@
           [(ngModel)]="employee.end_date"
           name="enddate"
           (dateChange)="onEndDateChange($event)"
+         (click)="endDatePicker.open()"
         />
         <mat-datepicker-toggle
           matPrefix
           [for]="endDatePicker"
           class="text-primary"
         ></mat-datepicker-toggle>
-        <mat-datepicker touchUi #endDatePicker></mat-datepicker>
+        <mat-datepicker
+          touchUi
+          #endDatePicker
+          [calendarHeaderComponent]="customHeader2"
+        >
+          <mat-datepicker-actions>
+            <span
+              ><i class="fa fa-calendar text-primary"  *ngIf="selected_end_date"></i>
+              <small class="text-start-date">{{
+                selected_end_date 
+              }}</small></span
+            >
+            <div>
+            <button
+              type="button"
+              class="btn btn-cancel text-primary"
+              matDatepickerCancel
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-primary" matDatepickerApply  (click)="onSaveEndDate()">
+              Save
+            </button>
+          </div>
+          </mat-datepicker-actions>
+        </mat-datepicker>
       </mat-form-field>
     </div>
 
     <!-- //  end of calendar -->
-    <div>
-      <button type="submit" class="btn btn-primary" style="margin-right: 20px;">
-        {{ isEditMode ? "Update" : "Add" }}
+
+    <div class="btn-grp">
+      <button type="submit" class="btn btn-primary">
+        {{ isEditMode ? "Update" : "Save" }}
       </button>
-      <button type="button" class="btn text-primary" (click)="cancel()">
+      <button type="button" class="btn text-primary btn-cancel" style="margin-left: 10px;"  (click)="cancel()">
         Cancel
       </button>
     </div>
   </form>
 </div>
-

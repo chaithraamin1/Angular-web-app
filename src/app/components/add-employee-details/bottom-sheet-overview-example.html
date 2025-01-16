@@ -1,0 +1,4 @@
+<ul class="list-group list-group-flush text-center" style="cursor: pointer;">
+  <li class="list-group-item" *ngFor="let role of roles" [value]="role.name" (click)="selectedEmployeeName(role.name)">{{role.name}}</li>
+</ul>
+
